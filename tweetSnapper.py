@@ -13,12 +13,12 @@ options = Options()
 options.add_argument("--lang={}".format(lang))
 options.headless = True
 
-driver= webdriver.Chrome(executable_path = "C:/Drivers/webdrivers/chromedriver.exe", chrome_options = options)
+driver= webdriver.Chrome(executable_path = "Chrome driver path", chrome_options = options)
 
 
 # twitter username and url
 
-username = "ABC"
+username = "username"
 accountUrl = "https://twitter.com/" + username
 
 print("Looking for new tweets to archive on @" + username + "'s Twitter account...")
@@ -85,4 +85,5 @@ while True:
 
 
     # delay before next check, can be adjusted
-    time.sleep(15)
+    delay = 15
+    time.sleep(delay)
