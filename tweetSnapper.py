@@ -13,7 +13,7 @@ options = Options()
 options.add_argument("--lang={}".format(lang))
 options.headless = True
 
-driver= webdriver.Chrome(executable_path = "Chrome driver path", chrome_options = options)
+driver = webdriver.Chrome(executable_path = "Chrome driver path", chrome_options = options)
 
 
 # twitter username and url
