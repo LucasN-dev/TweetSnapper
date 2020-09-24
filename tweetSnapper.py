@@ -11,7 +11,8 @@ import re
 lang = 'en'
 options = Options()
 options.add_argument("--lang={}".format(lang))
-options.headless = True
+options.headless = True # hides the chrome windows
+
 
 driver = webdriver.Chrome(executable_path = "Chrome driver path", chrome_options = options)
 
@@ -28,7 +29,7 @@ while True:
     # retrieve the page
     driver.get(accountUrl)
 
-    # wait for the page to load (adjust if needed)
+    # waiting for the page to load (adjust if needed)
     time.sleep(2)
 
     # check for a pinned tweet
@@ -37,53 +38,62 @@ while True:
     # retreive tweets url
     tweets = driver.find_elements_by_css_selector("a[href*='status']")
 
+    tweetsUrls=[]
+
+    for tweet in tweets:
+        tweetsUrls.append(tweet.get_attribute('href'))
+
     # if there is a pinned tweet, we ignore it
     if not pinnedTweet:
-        tweetUrl = tweets[0].get_attribute('href')
+        first = 0
     else:
-        tweetUrl = tweets[1].get_attribute('href')
+        first = 1
 
+    
+    for i in range(first,len(tweetsUrls)):
 
-    # cleaning the url, removing everything after the tweet id (e.g. /photo/1)
-    urlSplit = re.split('(/status/[0-9]*)', tweetUrl)
-    tweetUrl = urlSplit[0] + urlSplit[1]
+        tweetUrl = tweetsUrls[i]
 
+        # cleaning the url, removing everything after the tweet id (e.g. /photo/1)
+        urlSplit = re.split('(/status/[0-9]*)', tweetUrl)
+        tweetUrl = urlSplit[0] + urlSplit[1]
 
-    # API call to check if an archive already exists
-    # documentation : https://archive.readme.io/docs/website-snapshots
+        
 
-    request = "https://archive.org/wayback/available?url=" + tweetUrl
-    result = requests.get(request).json()
+        # API call to check if an archive already exists
+        # documentation : https://archive.readme.io/docs/website-snapshots
+        request = "https://archive.org/wayback/available?url=" + tweetUrl
+        time.sleep(2) # waiting for the API response, can be adjusted
+        result = requests.get(request).json()
 
-    alreadyArchived = result['archived_snapshots']
+        alreadyArchived = result['archived_snapshots']
 
-    if not alreadyArchived:
+        if not alreadyArchived:
 
-        # we create a snapshot of the page using selenium, I didn't find any working API
+            # we create a snapshot of the page using selenium, I didn't find any working API
 
-        print("The last tweet is not archived yet\nCreating snapshot...")
-        saveUrl = "https://web.archive.org/save/"
-        driver.get(saveUrl)
-        urlField = driver.find_element_by_name('url')
-        urlField.send_keys(tweetUrl)
-        time.sleep(2)
-        templist = driver.find_elements_by_xpath("//*[@type='submit']")
-        driver.find_elements_by_xpath("//*[@type='submit']")[1].click()
+            print("One recent tweet is not archived yet\nCreating snapshot...")
+            saveUrl = "https://web.archive.org/save/"
+            driver.get(saveUrl)
+            time.sleep(3)  # waiting for the page to load (adjust if needed)
+            urlField = driver.find_element_by_name('url')
+            urlField.send_keys(tweetUrl)
+            templist = driver.find_elements_by_xpath("//*[@type='submit']")
+            driver.find_elements_by_xpath("//*[@type='submit']")[1].click()
 
-        try:
-            # waiting for the "done" icon to show up
-            element = WebDriverWait(driver, 180).until(ec.presence_of_element_located((By.CLASS_NAME, "iconochive-Done")))
-            time.sleep(1)
-            links = driver.find_elements_by_css_selector("a[href*='web']")
-            print("Tweet archived succesfully! It can be found at the following address:")
-            print(links[0].get_attribute('href'))
-        except Exception:
-            print("Error: timeout")
+            try:
+                # waiting for the "done" icon to show up
+                timeoutDelay = 90 # can be adjusted
 
-    else:
-        print("The last tweet is already archived.")
-
+                element = WebDriverWait(driver, timeoutDelay).until(ec.presence_of_element_located((By.CLASS_NAME, "iconochive-Done")))
+                time.sleep(1)
+                links = driver.find_elements_by_css_selector("a[href*='web']")
+                print("Tweet archived succesfully! It can be found at the following address:")
+                print(links[0].get_attribute('href'))
+            except Exception:
+                print("Error: timeout")
 
     # delay before next check, can be adjusted
-    delay = 15
+    delay = 10
     time.sleep(delay)
+    
